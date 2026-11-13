@@ -1,0 +1,48 @@
+name: Shopee Pre-Order Toggle
+
+on:
+  schedule:
+    # Pre-order ON  — jam 00:01 WIB (17:01 UTC)
+    - cron: "1 17 * * *"
+    # Pre-order OFF — jam 12:01 WIB (05:01 UTC)
+    - cron: "1 5 * * *"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "on atau off"
+        required: true
+        default: "on"
+
+jobs:
+  toggle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Determine mode
+        id: mode
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "MODE=${{ github.event.inputs.mode }}" >> $GITHUB_OUTPUT
+          else
+            HOUR=$(TZ=Asia/Jakarta date +%-H)
+            if [ "$HOUR" -lt 12 ]; then
+              echo "MODE=on" >> $GITHUB_OUTPUT
+            else
+              echo "MODE=off" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+      - name: Toggle Pre-Order (${{ steps.mode.outputs.MODE }})
+        env:
+          SHOPEE_PARTNER_KEY: ${{ secrets.SHOPEE_PARTNER_KEY }}
+          SHOPEE_REFRESH_TOKEN: ${{ secrets.SHOPEE_REFRESH_TOKEN }}
+        run: python toggle_preorder.py ${{ steps.mode.outputs.MODE }}
