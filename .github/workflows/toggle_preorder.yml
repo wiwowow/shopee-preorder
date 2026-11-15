@@ -46,3 +46,16 @@ jobs:
           SHOPEE_PARTNER_KEY: ${{ secrets.SHOPEE_PARTNER_KEY }}
           SHOPEE_REFRESH_TOKEN: ${{ secrets.SHOPEE_REFRESH_TOKEN }}
         run: python toggle_preorder.py ${{ steps.mode.outputs.MODE }}
+
+      - name: Auto-update refresh token
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          if [ -f new_refresh_token.txt ]; then
+            NEW_TOKEN=$(cat new_refresh_token.txt)
+            if [ -n "$NEW_TOKEN" ]; then
+              gh secret set SHOPEE_REFRESH_TOKEN --body "$NEW_TOKEN" --repo ${{ github.repository }}
+              echo "✅ SHOPEE_REFRESH_TOKEN diperbarui otomatis"
+            fi
+          fi
