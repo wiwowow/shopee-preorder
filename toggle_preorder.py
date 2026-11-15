@@ -34,6 +34,14 @@ def get_access_token():
     data = resp.json()
     if "access_token" not in data:
         raise RuntimeError(f"Gagal ambil token: {data}")
+
+    # Shopee rotates refresh_token on every use — save the new one
+    new_refresh = data.get("refresh_token", "")
+    if new_refresh and new_refresh != REFRESH_TOKEN:
+        with open("new_refresh_token.txt", "w") as f:
+            f.write(new_refresh)
+        print(f"🔄 Refresh token baru disimpan (akan diupdate otomatis)")
+
     return data["access_token"]
 
 def toggle_item(access_token, item_id, is_pre_order):
